@@ -39,6 +39,7 @@ function forwardOrFetchJson(target: string, res: express.Response) {
     const ct = upstream.headers.get('content-type') || 'application/json; charset=utf-8';
     res.setHeader('content-type', ct);
     res.setHeader('cache-control', 'no-store');
+    res.setHeader('access-control-allow-origin', '*');
     res.send(bodyText);
   });
 }
@@ -149,7 +150,16 @@ async function proxyPass(req: ExpressRequest, res: ExpressResponse): Promise<boo
 /**
  * Developer API: return raw JSON for infos/color
  * These endpoints bypass Angular rendering to output JSON directly.
+ * CORS: allow any origin so third-party sites can fetch these endpoints.
  */
+app.options('/developer/api/:userId/:endpoint', (_req, res) => {
+  res.setHeader('access-control-allow-origin', '*');
+  res.setHeader('access-control-allow-methods', 'GET, OPTIONS');
+  res.setHeader('access-control-allow-headers', '*');
+  res.setHeader('access-control-max-age', '86400');
+  res.status(204).end();
+});
+
 app.get('/developer/api/:userId/infos', async (req, res) => {
   const userId = req.params['userId'];
   if (!userId) {
@@ -296,7 +306,7 @@ app.use(
     if (!proxied) {
       return next();
     }
-  }
+  },
 );
 
 /**
@@ -307,7 +317,7 @@ app.use(
     maxAge: '1y',
     index: false,
     redirect: false,
-  })
+  }),
 );
 
 /**
@@ -373,7 +383,7 @@ if (isMainModule(import.meta.url) || process.env['pm_id']) {
     console.log(`[SSR] listening on http://localhost:${port} (env=${env})`);
     if (!process.env['API_BASE_URL']) {
       console.warn(
-        `[SSR] API_BASE_URL non défini, fallback sur ${API_BASE}. Définissez API_BASE_URL pour surcharger.`
+        `[SSR] API_BASE_URL non défini, fallback sur ${API_BASE}. Définissez API_BASE_URL pour surcharger.`,
       );
     }
     console.log(`[SSR] API_BASE = ${API_BASE}`);
