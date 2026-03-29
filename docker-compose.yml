@@ -1,0 +1,23 @@
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: "${container_name:-melodyhue-frontend}"
+    restart: unless-stopped
+    environment:
+      PORT: "3000"
+      API_BASE_URL: "${API_BASE_URL:-https://api.melodyhue.com}"
+      PROXY_FORWARD: "${PROXY_FORWARD:-fetch}"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.melodyhue-frontend.rule=Host(`${DOMAIN:-melodyhue.com}`)"
+      - "traefik.http.routers.melodyhue-frontend.entrypoints=websecure"
+      - "traefik.http.routers.melodyhue-frontend.tls.certresolver=letsencrypt"
+      - "traefik.http.services.melodyhue-frontend.loadbalancer.server.port=3000"
+    networks:
+      - dokploy-network
+
+networks:
+  dokploy-network:
+    external: true
