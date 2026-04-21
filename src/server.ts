@@ -29,6 +29,19 @@ const PROXY_FORWARD = (process.env['PROXY_FORWARD'] || 'fetch').toLowerCase();
 const LOG_PROXY_ERRORS =
   process.env['DEBUG_PROXY'] === 'true' || (process.env['NODE_ENV'] || 'development') !== 'production';
 
+async function probeUpstreamHealth(): Promise<void> {
+  const target = `${API_BASE}/health`;
+  try {
+    const response = await fetch(target, {
+      headers: UPSTREAM_HEADERS,
+      signal: AbortSignal.timeout(5000),
+    });
+    console.log(`[SSR] Upstream health probe: ${target} -> ${response.status}`);
+  } catch (err) {
+    console.error('[SSR] Upstream health probe failed:', target, 'Error:', err);
+  }
+}
+
 function forwardOrFetchJson(target: string, res: express.Response) {
   if (PROXY_FORWARD === 'redirect') {
     // Rediriger côté client vers l'API publique (retournera du JSON directement au client)
@@ -133,7 +146,7 @@ async function proxyPass(req: ExpressRequest, res: ExpressResponse): Promise<boo
     res.send(bodyText);
     return true;
   } catch (err) {
-    if (LOG_PROXY_ERRORS) {
+    if (LOG_PROXY_ERRORS || process.env['NODE_ENV'] === 'production') {
       console.error('[Proxy] ERROR', req.method, req.originalUrl, '->', target, 'Error:', err);
     }
     // En cas d'erreur réseau vers l'API amont, renvoyer 503 Service Unavailable
@@ -172,7 +185,7 @@ app.get('/developer/api/:userId/infos', async (req, res) => {
   try {
     await forwardOrFetchJson(target, res);
   } catch (err) {
-    if (LOG_PROXY_ERRORS) {
+    if (LOG_PROXY_ERRORS || process.env['NODE_ENV'] === 'production') {
       console.error('[Proxy] GET /developer/api/:userId/infos ->', target, 'Error:', err);
     }
     res.status(503).json({
@@ -195,7 +208,7 @@ app.get('/developer/api/:userId/color', async (req, res) => {
   try {
     await forwardOrFetchJson(target, res);
   } catch (err) {
-    if (LOG_PROXY_ERRORS) {
+    if (LOG_PROXY_ERRORS || process.env['NODE_ENV'] === 'production') {
       console.error('[Proxy] GET /developer/api/:userId/color ->', target, 'Error:', err);
     }
     res.status(503).json({
@@ -222,7 +235,7 @@ app.get('/infos/:userId', async (req, res) => {
   try {
     await forwardOrFetchJson(target, res);
   } catch (err) {
-    if (LOG_PROXY_ERRORS) {
+    if (LOG_PROXY_ERRORS || process.env['NODE_ENV'] === 'production') {
       console.error('[Proxy] GET /infos/:userId ->', target, 'Error:', err);
     }
     res.status(503).json({
@@ -245,7 +258,7 @@ app.get('/color/:userId', async (req, res) => {
   try {
     await forwardOrFetchJson(target, res);
   } catch (err) {
-    if (LOG_PROXY_ERRORS) {
+    if (LOG_PROXY_ERRORS || process.env['NODE_ENV'] === 'production') {
       console.error('[Proxy] GET /color/:userId ->', target, 'Error:', err);
     }
     res.status(503).json({
@@ -263,7 +276,7 @@ app.get('/health', async (_req, res) => {
   try {
     await forwardOrFetchJson(target, res);
   } catch (err) {
-    if (LOG_PROXY_ERRORS) {
+    if (LOG_PROXY_ERRORS || process.env['NODE_ENV'] === 'production') {
       console.error('[Proxy] GET /health ->', target, 'Error:', err);
     }
     res
@@ -383,12 +396,14 @@ if (isMainModule(import.meta.url) || process.env['pm_id']) {
 
     const env = process.env['NODE_ENV'] || 'development';
     console.log(`[SSR] listening on http://localhost:${port} (env=${env})`);
+    console.log(`[SSR] PROXY_FORWARD = ${PROXY_FORWARD}`);
     if (!process.env['API_BASE_URL']) {
       console.warn(
         `[SSR] API_BASE_URL non défini, fallback sur ${API_BASE}. Définissez API_BASE_URL pour surcharger.`,
       );
     }
     console.log(`[SSR] API_BASE = ${API_BASE}`);
+    void probeUpstreamHealth();
   });
 }
 
