@@ -9,12 +9,7 @@ services:
       PORT: "3000"
       API_BASE_URL: "${API_BASE_URL:-https://api.melodyhue.com}"
       PROXY_FORWARD: "${PROXY_FORWARD:-fetch}"
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.melodyhue-frontend.rule=Host(`${DOMAIN:-melodyhue.com}`)"
-      - "traefik.http.routers.melodyhue-frontend.entrypoints=websecure"
-      - "traefik.http.routers.melodyhue-frontend.tls.certresolver=letsencrypt"
-      - "traefik.http.services.melodyhue-frontend.loadbalancer.server.port=3000"
+      DEBUG_PROXY: "${DEBUG_PROXY:-false}"
     networks:
       - dokploy-network
 
