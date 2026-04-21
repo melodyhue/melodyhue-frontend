@@ -33,6 +33,8 @@
             "outputMode": "server",
             "security": {
               "allowedHosts": [
+                "localhost",
+                "127.0.0.1",
                 "melodyhue.com",
                 "*.melodyhue.com"
               ]
@@ -83,6 +85,8 @@
             "host": "0.0.0.0",
             "port": 5500,
             "allowedHosts": [
+              "localhost",
+              "127.0.0.1",
               "dev.melodyhue.com"
             ]
           }
@@ -111,5 +115,8 @@
         }
       }
     }
+  },
+  "cli": {
+    "analytics": "17d3a3db-f766-47e0-8c63-844b33bca66b"
   }
 }

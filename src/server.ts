@@ -26,6 +26,8 @@ const UPSTREAM_HEADERS = {
 // Mode de forward: 'fetch' (par défaut) ou 'redirect'.
 // Utilisez PROXY_FORWARD=redirect si votre hébergeur bloque les requêtes sortantes.
 const PROXY_FORWARD = (process.env['PROXY_FORWARD'] || 'fetch').toLowerCase();
+const LOG_PROXY_ERRORS =
+  process.env['DEBUG_PROXY'] === 'true' || (process.env['NODE_ENV'] || 'development') !== 'production';
 
 function forwardOrFetchJson(target: string, res: express.Response) {
   if (PROXY_FORWARD === 'redirect') {
@@ -131,7 +133,7 @@ async function proxyPass(req: ExpressRequest, res: ExpressResponse): Promise<boo
     res.send(bodyText);
     return true;
   } catch (err) {
-    if (process.env['DEBUG_PROXY']) {
+    if (LOG_PROXY_ERRORS) {
       console.error('[Proxy] ERROR', req.method, req.originalUrl, '->', target, 'Error:', err);
     }
     // En cas d'erreur réseau vers l'API amont, renvoyer 503 Service Unavailable
@@ -170,7 +172,7 @@ app.get('/developer/api/:userId/infos', async (req, res) => {
   try {
     await forwardOrFetchJson(target, res);
   } catch (err) {
-    if (process.env['DEBUG_PROXY']) {
+    if (LOG_PROXY_ERRORS) {
       console.error('[Proxy] GET /developer/api/:userId/infos ->', target, 'Error:', err);
     }
     res.status(503).json({
@@ -193,7 +195,7 @@ app.get('/developer/api/:userId/color', async (req, res) => {
   try {
     await forwardOrFetchJson(target, res);
   } catch (err) {
-    if (process.env['DEBUG_PROXY']) {
+    if (LOG_PROXY_ERRORS) {
       console.error('[Proxy] GET /developer/api/:userId/color ->', target, 'Error:', err);
     }
     res.status(503).json({
@@ -220,7 +222,7 @@ app.get('/infos/:userId', async (req, res) => {
   try {
     await forwardOrFetchJson(target, res);
   } catch (err) {
-    if (process.env['DEBUG_PROXY']) {
+    if (LOG_PROXY_ERRORS) {
       console.error('[Proxy] GET /infos/:userId ->', target, 'Error:', err);
     }
     res.status(503).json({
@@ -243,7 +245,7 @@ app.get('/color/:userId', async (req, res) => {
   try {
     await forwardOrFetchJson(target, res);
   } catch (err) {
-    if (process.env['DEBUG_PROXY']) {
+    if (LOG_PROXY_ERRORS) {
       console.error('[Proxy] GET /color/:userId ->', target, 'Error:', err);
     }
     res.status(503).json({
@@ -261,7 +263,7 @@ app.get('/health', async (_req, res) => {
   try {
     await forwardOrFetchJson(target, res);
   } catch (err) {
-    if (process.env['DEBUG_PROXY']) {
+    if (LOG_PROXY_ERRORS) {
       console.error('[Proxy] GET /health ->', target, 'Error:', err);
     }
     res
