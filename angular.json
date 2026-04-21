@@ -31,6 +31,12 @@
             ],
             "server": "src/main.server.ts",
             "outputMode": "server",
+            "security": {
+              "allowedHosts": [
+                "melodyhue.com",
+                "*.melodyhue.com"
+              ]
+            },
             "ssr": {
               "entry": "src/server.ts"
             }
